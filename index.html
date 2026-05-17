@@ -1,0 +1,1208 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>BibliometriX — Análisis Bibliométrico</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;1,9..144,300&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --ink: #0f0e0c;
+    --paper: #f5f0e8;
+    --cream: #ede8d8;
+    --accent: #c8400a;
+    --accent2: #1a5c3a;
+    --accent3: #2a4a7f;
+    --muted: #7a7060;
+    --border: #c8bfa8;
+    --card: #faf7f2;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Mono', monospace;
+    background: var(--paper);
+    color: var(--ink);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* GRAIN OVERLAY */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.6;
+  }
+
+  /* HEADER */
+  header {
+    border-bottom: 2px solid var(--ink);
+    padding: 2rem 3rem 1.5rem;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    background: var(--ink);
+    color: var(--paper);
+    position: relative;
+    overflow: hidden;
+  }
+
+  header::after {
+    content: '◆ BIBLIOMETRIX ◆';
+    position: absolute;
+    right: -60px;
+    top: 50%;
+    transform: translateY(-50%) rotate(90deg);
+    font-size: 0.6rem;
+    letter-spacing: 0.4em;
+    color: rgba(245,240,232,0.15);
+    font-family: 'DM Mono', monospace;
+    white-space: nowrap;
+  }
+
+  .header-left h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(2.2rem, 5vw, 3.5rem);
+    line-height: 1;
+    letter-spacing: -0.02em;
+    color: var(--paper);
+  }
+
+  .header-left h1 span {
+    color: var(--accent);
+  }
+
+  .header-left p {
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 0.5rem;
+    color: rgba(245,240,232,0.5);
+  }
+
+  .header-right {
+    text-align: right;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    color: rgba(245,240,232,0.4);
+    line-height: 1.8;
+  }
+
+  /* MAIN LAYOUT */
+  main {
+    max-width: 1300px;
+    margin: 0 auto;
+    padding: 2.5rem 2rem;
+  }
+
+  /* UPLOAD ZONE */
+  .upload-section {
+    margin-bottom: 3rem;
+  }
+
+  .section-label {
+    font-size: 0.6rem;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .drop-zone {
+    border: 2px dashed var(--border);
+    border-radius: 4px;
+    padding: 3.5rem 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    background: var(--card);
+    position: relative;
+  }
+
+  .drop-zone:hover, .drop-zone.drag-over {
+    border-color: var(--accent);
+    background: #fff9f5;
+  }
+
+  .drop-zone input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+  }
+
+  .drop-icon {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    display: block;
+  }
+
+  .drop-zone h2 {
+    font-family: 'Fraunces', serif;
+    font-size: 1.4rem;
+    font-weight: 300;
+    margin-bottom: 0.5rem;
+    color: var(--ink);
+  }
+
+  .drop-zone p {
+    font-size: 0.72rem;
+    color: var(--muted);
+    line-height: 1.8;
+  }
+
+  .drop-zone .formats {
+    display: inline-flex;
+    gap: 0.5rem;
+    margin-top: 1.2rem;
+  }
+
+  .badge {
+    font-size: 0.6rem;
+    letter-spacing: 0.15em;
+    padding: 0.25rem 0.6rem;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    background: var(--cream);
+  }
+
+  /* DEMO BUTTON */
+  .demo-btn {
+    margin-top: 1.5rem;
+    display: inline-block;
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    background: none;
+    border: 1px solid var(--accent);
+    padding: 0.5rem 1.2rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .demo-btn:hover {
+    background: var(--accent);
+    color: white;
+  }
+
+  /* RESULTS AREA */
+  #results { display: none; }
+
+  /* STATS STRIP */
+  .stats-strip {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    margin-bottom: 3rem;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .stat-card {
+    background: var(--card);
+    padding: 1.5rem 1.25rem;
+    text-align: center;
+    animation: fadeUp 0.5s ease both;
+  }
+
+  .stat-card:nth-child(2) { animation-delay: 0.05s; }
+  .stat-card:nth-child(3) { animation-delay: 0.1s; }
+  .stat-card:nth-child(4) { animation-delay: 0.15s; }
+  .stat-card:nth-child(5) { animation-delay: 0.2s; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .stat-number {
+    font-family: 'DM Serif Display', serif;
+    font-size: 2.4rem;
+    line-height: 1;
+    color: var(--ink);
+    display: block;
+  }
+
+  .stat-number.accent { color: var(--accent); }
+  .stat-number.accent2 { color: var(--accent2); }
+  .stat-number.accent3 { color: var(--accent3); }
+
+  .stat-label {
+    font-size: 0.62rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 0.4rem;
+    display: block;
+  }
+
+  /* CHARTS GRID */
+  .charts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  @media (max-width: 800px) {
+    .charts-grid { grid-template-columns: 1fr; }
+    header { padding: 1.5rem; flex-direction: column; align-items: flex-start; gap: 1rem; }
+    main { padding: 1.5rem 1rem; }
+  }
+
+  .chart-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1.5rem;
+    animation: fadeUp 0.5s ease both;
+    animation-delay: 0.25s;
+  }
+
+  .chart-card.wide {
+    grid-column: 1 / -1;
+  }
+
+  .chart-title {
+    font-family: 'Fraunces', serif;
+    font-size: 1rem;
+    font-weight: 300;
+    margin-bottom: 0.25rem;
+    color: var(--ink);
+  }
+
+  .chart-sub {
+    font-size: 0.62rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 1.25rem;
+    display: block;
+  }
+
+  canvas { max-width: 100%; }
+
+  /* TABLE */
+  .table-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+    animation: fadeUp 0.5s ease 0.35s both;
+  }
+
+  .table-header {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .table-header h3 {
+    font-family: 'Fraunces', serif;
+    font-size: 1rem;
+    font-weight: 300;
+  }
+
+  .search-box {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    padding: 0.4rem 0.8rem;
+    border: 1px solid var(--border);
+    background: var(--paper);
+    color: var(--ink);
+    outline: none;
+    border-radius: 2px;
+    width: 200px;
+    transition: border-color 0.2s;
+  }
+
+  .search-box:focus { border-color: var(--accent); }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.72rem;
+  }
+
+  th {
+    text-align: left;
+    padding: 0.75rem 1.5rem;
+    font-size: 0.6rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+    background: var(--cream);
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+  }
+
+  th:hover { color: var(--accent); }
+
+  td {
+    padding: 0.7rem 1.5rem;
+    border-bottom: 1px solid rgba(200,191,168,0.4);
+    line-height: 1.5;
+    vertical-align: top;
+  }
+
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--cream); }
+
+  .year-pill {
+    display: inline-block;
+    background: var(--ink);
+    color: var(--paper);
+    font-size: 0.6rem;
+    padding: 0.15rem 0.4rem;
+    border-radius: 2px;
+  }
+
+  .cited-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .bar-fill {
+    height: 4px;
+    background: var(--accent);
+    border-radius: 2px;
+    min-width: 2px;
+    transition: width 0.3s ease;
+  }
+
+  /* EXPORT */
+  .export-strip {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 3rem;
+    flex-wrap: wrap;
+    animation: fadeUp 0.5s ease 0.4s both;
+  }
+
+  .export-btn {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 0.6rem 1.4rem;
+    border: 1.5px solid var(--ink);
+    background: var(--ink);
+    color: var(--paper);
+    cursor: pointer;
+    transition: all 0.2s;
+    border-radius: 2px;
+  }
+
+  .export-btn:hover {
+    background: transparent;
+    color: var(--ink);
+  }
+
+  .export-btn.outline {
+    background: transparent;
+    color: var(--ink);
+  }
+
+  .export-btn.outline:hover {
+    background: var(--ink);
+    color: var(--paper);
+  }
+
+  /* RESET */
+  .reset-link {
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    cursor: pointer;
+    text-decoration: underline;
+    margin-left: auto;
+    background: none;
+    border: none;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .reset-link:hover { color: var(--accent); }
+
+  /* TOOLTIP */
+  .tooltip {
+    position: relative;
+    display: inline-block;
+    cursor: help;
+    color: var(--muted);
+    font-size: 0.65rem;
+    border-bottom: 1px dashed var(--border);
+  }
+
+  /* FOOTER */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 1.5rem 3rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.62rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  footer a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+
+  /* LOADING */
+  .loading {
+    text-align: center;
+    padding: 3rem;
+    font-size: 0.72rem;
+    color: var(--muted);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+
+  .spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    vertical-align: middle;
+    margin-right: 0.75rem;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* HELP SECTION */
+  .help-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-top: 2rem;
+  }
+
+  @media (max-width: 700px) { .help-grid { grid-template-columns: 1fr; } }
+
+  .help-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1.25rem;
+  }
+
+  .help-card h4 {
+    font-family: 'Fraunces', serif;
+    font-weight: 300;
+    font-size: 0.95rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .help-card p {
+    font-size: 0.68rem;
+    color: var(--muted);
+    line-height: 1.7;
+  }
+
+  .step-num {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.8rem;
+    color: var(--accent);
+    display: block;
+    margin-bottom: 0.5rem;
+    line-height: 1;
+  }
+
+  /* WORD CLOUD simple */
+  .word-cloud {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 1rem 0;
+    align-items: center;
+  }
+
+  .word-tag {
+    display: inline-block;
+    padding: 0.3rem 0.7rem;
+    border-radius: 2px;
+    font-size: var(--fs, 0.75rem);
+    cursor: default;
+    transition: transform 0.2s;
+    line-height: 1;
+  }
+
+  .word-tag:hover { transform: scale(1.1); }
+
+  .no-data {
+    color: var(--muted);
+    font-size: 0.72rem;
+    padding: 2rem;
+    text-align: center;
+  }
+
+  /* PAGINATION */
+  .pagination {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--border);
+    align-items: center;
+  }
+
+  .page-btn {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    padding: 0.3rem 0.6rem;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--ink);
+    cursor: pointer;
+    border-radius: 2px;
+  }
+
+  .page-btn.active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .page-btn:hover:not(.active) { border-color: var(--accent); color: var(--accent); }
+  .page-info { font-size: 0.62rem; color: var(--muted); margin-right: auto; }
+
+  /* Responsive table */
+  .table-wrap { overflow-x: auto; }
+
+  .tag-js { color: var(--accent3); border-color: var(--accent3); background: rgba(42,74,127,0.07); }
+  .tag-other { color: var(--accent2); border-color: var(--accent2); background: rgba(26,92,58,0.07); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <h1>Bibliometri<span>X</span></h1>
+    <p>Análisis bibliométrico · Investigación académica · Zero-dependency</p>
+  </div>
+  <div class="header-right">
+    <div>Scopus · Web of Science · CSV · BIB</div>
+    <div>v1.0 · REKOL08</div>
+  </div>
+</header>
+
+<main>
+
+  <!-- UPLOAD -->
+  <div class="upload-section" id="uploadSection">
+    <div class="section-label">Cargar datos</div>
+
+    <div class="drop-zone" id="dropZone">
+      <input type="file" id="fileInput" accept=".csv,.bib,.txt" multiple/>
+      <span class="drop-icon">◈</span>
+      <h2>Arrastra tu archivo o haz clic para seleccionar</h2>
+      <p>Exporta tu búsqueda desde Scopus o Web of Science en formato CSV<br/>y cárgala aquí para obtener el análisis completo al instante.</p>
+      <div class="formats">
+        <span class="badge">CSV Scopus</span>
+        <span class="badge">CSV WoS</span>
+        <span class="badge">BibTeX</span>
+      </div>
+      <br/>
+      <button class="demo-btn" id="demoBtn" onclick="loadDemo(event)">◎ Cargar datos de demostración</button>
+    </div>
+
+    <div class="help-grid">
+      <div class="help-card">
+        <span class="step-num">01</span>
+        <h4>Exporta desde Scopus</h4>
+        <p>Realiza tu búsqueda → selecciona todos los registros → Export → CSV → incluye todos los campos.</p>
+      </div>
+      <div class="help-card">
+        <span class="step-num">02</span>
+        <h4>Carga el archivo</h4>
+        <p>Arrastra el CSV directamente aquí o haz clic para seleccionarlo. No se sube a ningún servidor.</p>
+      </div>
+      <div class="help-card">
+        <span class="step-num">03</span>
+        <h4>Explora y exporta</h4>
+        <p>Visualiza los gráficos, filtra la tabla de publicaciones y exporta el reporte en JSON o CSV.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="results">
+
+    <div class="export-strip">
+      <div class="section-label" style="margin:0;flex:1">— Resultados del análisis</div>
+      <button class="export-btn outline" onclick="exportCSV()">↓ Exportar CSV</button>
+      <button class="export-btn outline" onclick="exportJSON()">↓ Exportar JSON</button>
+      <button class="export-btn" onclick="window.print()">⎙ Imprimir</button>
+      <button class="reset-link" onclick="resetApp()">✕ Nuevo análisis</button>
+    </div>
+
+    <!-- STATS -->
+    <div class="stats-strip" id="statsStrip"></div>
+
+    <!-- CHARTS ROW 1 -->
+    <div class="charts-grid">
+      <div class="chart-card wide">
+        <div class="chart-title">Producción científica por año</div>
+        <span class="chart-sub">Número de publicaciones · serie temporal</span>
+        <canvas id="yearChart" height="80"></canvas>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Tipos de documento</div>
+        <span class="chart-sub">Distribución por categoría</span>
+        <canvas id="typeChart"></canvas>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Idioma de publicación</div>
+        <span class="chart-sub">Distribución por idioma</span>
+        <canvas id="langChart"></canvas>
+      </div>
+    </div>
+
+    <!-- CHARTS ROW 2 -->
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-title">Top 10 — Fuentes / Journals</div>
+        <span class="chart-sub">Revistas con mayor número de publicaciones</span>
+        <canvas id="journalChart" height="160"></canvas>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Top 10 — Autores más productivos</div>
+        <span class="chart-sub">Por número de publicaciones indexadas</span>
+        <canvas id="authorChart" height="160"></canvas>
+      </div>
+    </div>
+
+    <!-- KEYWORDS -->
+    <div class="chart-card" style="margin-bottom:1.5rem">
+      <div class="chart-title">Nube de palabras clave</div>
+      <span class="chart-sub">Keywords de autor · frecuencia de aparición</span>
+      <div class="word-cloud" id="wordCloud"></div>
+    </div>
+
+    <!-- TABLE -->
+    <div class="table-card">
+      <div class="table-header">
+        <h3 style="font-family:'Fraunces',serif;font-weight:300">Publicaciones</h3>
+        <input class="search-box" id="tableSearch" placeholder="Buscar título, autor…" oninput="filterTable()"/>
+      </div>
+      <div class="table-wrap">
+        <table id="pubTable">
+          <thead>
+            <tr>
+              <th onclick="sortTable('year')">Año ↕</th>
+              <th onclick="sortTable('title')">Título ↕</th>
+              <th onclick="sortTable('authors')">Autores ↕</th>
+              <th onclick="sortTable('source')">Fuente ↕</th>
+              <th onclick="sortTable('cited')">Citas ↕</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+      <div class="pagination" id="pagination"></div>
+    </div>
+
+  </div><!-- /results -->
+
+</main>
+
+<footer>
+  <span>BibliometriX · Herramienta de análisis bibliométrico de código abierto</span>
+  <span>Desarrollado por <a href="https://rekol08.github.io/REKOL08/" target="_blank">REKOL08</a> · Pereira, Colombia</span>
+  <span>Los datos no se almacenan ni se envían a ningún servidor</span>
+</footer>
+
+<script>
+// ─── CHART DEFAULTS ───────────────────────────────────────────
+Chart.defaults.font.family = "'DM Mono', monospace";
+Chart.defaults.font.size = 11;
+Chart.defaults.color = '#7a7060';
+Chart.defaults.plugins.legend.labels.boxWidth = 10;
+Chart.defaults.plugins.legend.labels.padding = 16;
+
+const PALETTE = ['#c8400a','#1a5c3a','#2a4a7f','#8b4513','#4a6741','#1a3a5c','#c87040','#3a7a5c','#4a6ab0','#a05020'];
+
+let allData = [];
+let filtered = [];
+let sortKey = 'year';
+let sortDir = -1;
+let currentPage = 1;
+const PAGE_SIZE = 15;
+let charts = {};
+
+// ─── DRAG & DROP ──────────────────────────────────────────────
+const dz = document.getElementById('dropZone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+dz.addEventListener('drop', e => {
+  e.preventDefault();
+  dz.classList.remove('drag-over');
+  const files = e.dataTransfer.files;
+  if (files.length) handleFile(files[0]);
+});
+document.getElementById('fileInput').addEventListener('change', e => {
+  if (e.target.files.length) handleFile(e.target.files[0]);
+});
+
+// ─── FILE HANDLER ─────────────────────────────────────────────
+function handleFile(file) {
+  const name = file.name.toLowerCase();
+  const reader = new FileReader();
+  reader.onload = e => {
+    const text = e.target.result;
+    let records = [];
+    if (name.endsWith('.bib')) {
+      records = parseBib(text);
+    } else {
+      records = parseCSV(text);
+    }
+    if (!records.length) {
+      alert('No se encontraron registros. Asegúrate de exportar el CSV con todos los campos desde Scopus o WoS.');
+      return;
+    }
+    allData = records;
+    filtered = [...allData];
+    renderAll();
+  };
+  reader.readAsText(file, 'utf-8');
+}
+
+// ─── CSV PARSER (Scopus & WoS) ────────────────────────────────
+function parseCSV(text) {
+  const lines = text.split(/\r?\n/);
+  if (lines.length < 2) return [];
+  const headers = parseCSVLine(lines[0]).map(h => h.trim().toLowerCase().replace(/[^a-z0-9]/g,'_'));
+
+  const map = (hdrs, ...opts) => {
+    for (const o of opts) { const i = hdrs.indexOf(o); if (i > -1) return i; }
+    return -1;
+  };
+
+  const fi = {
+    title:   map(headers,'title','article_title','document_title'),
+    authors: map(headers,'authors','author','au'),
+    year:    map(headers,'year','publication_year','py','pub_year'),
+    source:  map(headers,'source_title','publication_name','journal','so','source','journal_title'),
+    cited:   map(headers,'cited_by','times_cited','tc','citation_count','citations'),
+    type:    map(headers,'document_type','dt','article_type','publication_type','document_types'),
+    lang:    map(headers,'language','la','language_of_original_document'),
+    keywords:map(headers,'author_keywords','de','keywords','author_keywords_de_','index_keywords'),
+    doi:     map(headers,'doi'),
+  };
+
+  const records = [];
+  for (let i = 1; i < lines.length; i++) {
+    if (!lines[i].trim()) continue;
+    const cols = parseCSVLine(lines[i]);
+    const get = idx => (idx > -1 && cols[idx] !== undefined) ? cols[idx].trim() : '';
+    const yr = parseInt(get(fi.year)) || 0;
+    records.push({
+      title:    get(fi.title) || '(sin título)',
+      authors:  get(fi.authors),
+      year:     yr,
+      source:   get(fi.source),
+      cited:    parseInt(get(fi.cited)) || 0,
+      type:     get(fi.type) || 'Article',
+      lang:     normalizeLang(get(fi.lang)),
+      keywords: get(fi.keywords),
+      doi:      get(fi.doi),
+    });
+  }
+  return records.filter(r => r.year > 1900 || r.title !== '(sin título)');
+}
+
+function parseCSVLine(line) {
+  const result = [];
+  let cur = '';
+  let inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (c === '"') { inQ = !inQ; }
+    else if (c === ',' && !inQ) { result.push(cur); cur = ''; }
+    else cur += c;
+  }
+  result.push(cur);
+  return result;
+}
+
+// ─── BIB PARSER ───────────────────────────────────────────────
+function parseBib(text) {
+  const entries = text.split(/\n@/).filter(Boolean);
+  return entries.map(entry => {
+    const get = key => {
+      const m = entry.match(new RegExp(key + '\\s*=\\s*[{"]([^}"]+)[}"]','i'));
+      return m ? m[1].trim() : '';
+    };
+    return {
+      title:    get('title') || '(sin título)',
+      authors:  get('author'),
+      year:     parseInt(get('year')) || 0,
+      source:   get('journal') || get('booktitle') || get('publisher'),
+      cited:    0,
+      type:     entry.split('{')[0].trim() || 'article',
+      lang:     'English',
+      keywords: get('keywords'),
+      doi:      get('doi'),
+    };
+  }).filter(r => r.title !== '(sin título)');
+}
+
+function normalizeLang(l) {
+  if (!l) return 'English';
+  const ll = l.toLowerCase();
+  if (ll.includes('eng') || ll.includes('ingl')) return 'English';
+  if (ll.includes('esp') || ll.includes('spa') || ll.includes('cast')) return 'Español';
+  if (ll.includes('fre') || ll.includes('fra') || ll.includes('fran')) return 'Français';
+  if (ll.includes('por')) return 'Português';
+  if (ll.includes('ger') || ll.includes('deu') || ll.includes('ale')) return 'Deutsch';
+  return l.charAt(0).toUpperCase() + l.slice(1).toLowerCase();
+}
+
+// ─── DEMO DATA ────────────────────────────────────────────────
+function loadDemo(e) {
+  e.stopPropagation();
+  const topics = ['Machine Learning','Artificial Intelligence','Deep Learning','Natural Language Processing','Data Science','Information Retrieval','Knowledge Management','Digital Libraries','Bibliometrics','Scientometrics'];
+  const sources = ['Scientometrics','Journal of Informetrics','Information Processing & Management','Library Hi Tech','El Profesional de la Información','JASIST','Scientometrics','Research Policy','PLOS ONE','Sustainability'];
+  const authors = ['García-Peñalvo F.J.','Martínez-Abad F.','Rodríguez-Conde M.J.','Merlo-Vega J.A.','Abadal E.','Borrego Á.','Gorbea-Portal S.','Sánchez-García S.','López-Robles J.R.','Noyons E.','van Eck N.J.','Waltman L.','Zitt M.','Perianes-Rodriguez A.','Guerrero-Bote V.P.'];
+  const types = ['Article','Review','Conference Paper','Book Chapter','Article'];
+  const langs = ['English','English','English','Español','English','English','Português','English'];
+
+  const rnd = (a) => a[Math.floor(Math.random() * a.length)];
+  const data = [];
+  for (let y = 2010; y <= 2024; y++) {
+    const count = Math.floor(5 + (y - 2010) * 2.5 + Math.random() * 8);
+    for (let i = 0; i < count; i++) {
+      const a1 = rnd(authors); let a2 = rnd(authors); while (a2 === a1) a2 = rnd(authors);
+      data.push({
+        title: `${rnd(topics)} in academic libraries: a systematic review (${y}) [${i+1}]`,
+        authors: `${a1}; ${a2}`,
+        year: y,
+        source: rnd(sources),
+        cited: Math.floor(Math.random() * Math.pow((2025 - y), 1.5) * 3),
+        type: rnd(types),
+        lang: rnd(langs),
+        keywords: `${rnd(topics).toLowerCase()}; ${rnd(topics).toLowerCase()}; scientometrics; bibliometrics`,
+        doi: `10.1000/bx.${y}.${i+1}`,
+      });
+    }
+  }
+  allData = data;
+  filtered = [...allData];
+  renderAll();
+}
+
+// ─── RENDER ALL ───────────────────────────────────────────────
+function renderAll() {
+  document.getElementById('uploadSection').style.display = 'none';
+  document.getElementById('results').style.display = 'block';
+  renderStats();
+  renderYearChart();
+  renderTypeChart();
+  renderLangChart();
+  renderJournalChart();
+  renderAuthorChart();
+  renderWordCloud();
+  currentPage = 1;
+  renderTable();
+}
+
+// ─── STATS ────────────────────────────────────────────────────
+function renderStats() {
+  const years = allData.map(r => r.year).filter(y => y > 1900);
+  const totalCited = allData.reduce((a, r) => a + r.cited, 0);
+  const hIndex = calcH(allData.map(r => r.cited).sort((a,b) => b - a));
+  const journals = new Set(allData.map(r => r.source).filter(Boolean)).size;
+  const authSet = new Set();
+  allData.forEach(r => r.authors.split(/;|,/).forEach(a => { if (a.trim()) authSet.add(a.trim()); }));
+
+  const strip = document.getElementById('statsStrip');
+  strip.innerHTML = `
+    <div class="stat-card"><span class="stat-number">${allData.length}</span><span class="stat-label">Publicaciones</span></div>
+    <div class="stat-card"><span class="stat-number accent">${totalCited.toLocaleString()}</span><span class="stat-label">Total citas</span></div>
+    <div class="stat-card"><span class="stat-number accent2">${hIndex}</span><span class="stat-label">Índice H</span></div>
+    <div class="stat-card"><span class="stat-number accent3">${authSet.size}</span><span class="stat-label">Autores únicos</span></div>
+    <div class="stat-card"><span class="stat-number">${journals}</span><span class="stat-label">Fuentes / Journals</span></div>
+    <div class="stat-card"><span class="stat-number accent">${years.length ? Math.min(...years) : '—'} – ${years.length ? Math.max(...years) : '—'}</span><span class="stat-label">Rango temporal</span></div>
+  `;
+}
+
+function calcH(sortedCites) {
+  let h = 0;
+  for (let i = 0; i < sortedCites.length; i++) {
+    if (sortedCites[i] >= i + 1) h = i + 1; else break;
+  }
+  return h;
+}
+
+// ─── YEAR CHART ───────────────────────────────────────────────
+function renderYearChart() {
+  const freq = {};
+  allData.forEach(r => { if (r.year > 1900) freq[r.year] = (freq[r.year] || 0) + 1; });
+  const years = Object.keys(freq).sort();
+  destroyChart('yearChart');
+  charts.year = new Chart(document.getElementById('yearChart'), {
+    type: 'bar',
+    data: {
+      labels: years,
+      datasets: [{
+        label: 'Publicaciones',
+        data: years.map(y => freq[y]),
+        backgroundColor: years.map((_, i) => i === years.length - 1 ? '#c8400a' : 'rgba(200,64,10,0.25)'),
+        borderColor: '#c8400a',
+        borderWidth: 1,
+        borderRadius: 2,
+      }]
+    },
+    options: {
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { display: false } },
+        y: { grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { stepSize: 1 } }
+      }
+    }
+  });
+}
+
+// ─── TYPE CHART ───────────────────────────────────────────────
+function renderTypeChart() {
+  const freq = {};
+  allData.forEach(r => { const t = r.type || 'Article'; freq[t] = (freq[t] || 0) + 1; });
+  const sorted = Object.entries(freq).sort((a,b) => b[1]-a[1]).slice(0,6);
+  destroyChart('typeChart');
+  charts.type = new Chart(document.getElementById('typeChart'), {
+    type: 'doughnut',
+    data: {
+      labels: sorted.map(x => x[0]),
+      datasets: [{ data: sorted.map(x => x[1]), backgroundColor: PALETTE, borderWidth: 2, borderColor: '#f5f0e8' }]
+    },
+    options: { plugins: { legend: { position: 'right' } }, cutout: '60%' }
+  });
+}
+
+// ─── LANG CHART ───────────────────────────────────────────────
+function renderLangChart() {
+  const freq = {};
+  allData.forEach(r => { const l = r.lang || 'English'; freq[l] = (freq[l] || 0) + 1; });
+  const sorted = Object.entries(freq).sort((a,b) => b[1]-a[1]).slice(0,6);
+  destroyChart('langChart');
+  charts.lang = new Chart(document.getElementById('langChart'), {
+    type: 'pie',
+    data: {
+      labels: sorted.map(x => x[0]),
+      datasets: [{ data: sorted.map(x => x[1]), backgroundColor: PALETTE.slice(3), borderWidth: 2, borderColor: '#f5f0e8' }]
+    },
+    options: { plugins: { legend: { position: 'right' } } }
+  });
+}
+
+// ─── JOURNAL CHART ────────────────────────────────────────────
+function renderJournalChart() {
+  const freq = {};
+  allData.forEach(r => { if (r.source) freq[r.source] = (freq[r.source] || 0) + 1; });
+  const top = Object.entries(freq).sort((a,b) => b[1]-a[1]).slice(0,10).reverse();
+  destroyChart('journalChart');
+  charts.journal = new Chart(document.getElementById('journalChart'), {
+    type: 'bar',
+    data: {
+      labels: top.map(x => x[0].length > 38 ? x[0].slice(0,36)+'…' : x[0]),
+      datasets: [{ data: top.map(x => x[1]), backgroundColor: 'rgba(26,92,58,0.7)', borderColor: '#1a5c3a', borderWidth: 1, borderRadius: 2 }]
+    },
+    options: {
+      indexAxis: 'y',
+      plugins: { legend: { display: false } },
+      scales: { x: { grid: { color: 'rgba(0,0,0,0.05)' } }, y: { grid: { display: false } } }
+    }
+  });
+}
+
+// ─── AUTHOR CHART ─────────────────────────────────────────────
+function renderAuthorChart() {
+  const freq = {};
+  allData.forEach(r => r.authors.split(/;|,/).forEach(a => {
+    const t = a.trim();
+    if (t && t.length > 2) freq[t] = (freq[t] || 0) + 1;
+  }));
+  const top = Object.entries(freq).sort((a,b) => b[1]-a[1]).slice(0,10).reverse();
+  destroyChart('authorChart');
+  charts.author = new Chart(document.getElementById('authorChart'), {
+    type: 'bar',
+    data: {
+      labels: top.map(x => x[0].length > 30 ? x[0].slice(0,28)+'…' : x[0]),
+      datasets: [{ data: top.map(x => x[1]), backgroundColor: 'rgba(42,74,127,0.7)', borderColor: '#2a4a7f', borderWidth: 1, borderRadius: 2 }]
+    },
+    options: {
+      indexAxis: 'y',
+      plugins: { legend: { display: false } },
+      scales: { x: { grid: { color: 'rgba(0,0,0,0.05)' } }, y: { grid: { display: false } } }
+    }
+  });
+}
+
+// ─── WORD CLOUD ───────────────────────────────────────────────
+function renderWordCloud() {
+  const freq = {};
+  const stop = new Set(['the','and','of','in','a','an','for','to','with','on','at','is','are','as','by','from','that','this','it','be','or','de','la','el','los','las','en','con','por','para','una','un','del']);
+  allData.forEach(r => {
+    (r.keywords || '').split(/;|,/).forEach(kw => {
+      const t = kw.trim().toLowerCase().replace(/[^a-záéíóúüñ\s]/g,'').trim();
+      if (t && t.length > 2 && !stop.has(t)) freq[t] = (freq[t] || 0) + 1;
+    });
+  });
+  const sorted = Object.entries(freq).sort((a,b) => b[1]-a[1]).slice(0,50);
+  if (!sorted.length) { document.getElementById('wordCloud').innerHTML = '<p class="no-data">No se encontraron palabras clave</p>'; return; }
+  const max = sorted[0][1];
+  const colors = ['#c8400a','#1a5c3a','#2a4a7f','#8b4513','#4a6741','#7a4070'];
+  document.getElementById('wordCloud').innerHTML = sorted.map(([word, cnt]) => {
+    const size = 0.65 + (cnt / max) * 1.1;
+    const col = colors[Math.floor(Math.random() * colors.length)];
+    return `<span class="word-tag" style="--fs:${size}rem;background:${col}18;border:1px solid ${col}40;color:${col}">${word} <small style="opacity:.5">${cnt}</small></span>`;
+  }).join('');
+}
+
+// ─── TABLE ────────────────────────────────────────────────────
+let tableData = [];
+
+function filterTable() {
+  const q = document.getElementById('tableSearch').value.toLowerCase();
+  tableData = filtered.filter(r =>
+    r.title.toLowerCase().includes(q) ||
+    r.authors.toLowerCase().includes(q) ||
+    r.source.toLowerCase().includes(q)
+  );
+  currentPage = 1;
+  renderTablePage();
+}
+
+function sortTable(key) {
+  if (sortKey === key) sortDir *= -1;
+  else { sortKey = key; sortDir = key === 'year' || key === 'cited' ? -1 : 1; }
+  filtered.sort((a,b) => {
+    const av = a[key] ?? '';
+    const bv = b[key] ?? '';
+    if (typeof av === 'number') return (av - bv) * sortDir;
+    return av.toString().localeCompare(bv.toString()) * sortDir;
+  });
+  filterTable();
+}
+
+function renderTable() {
+  tableData = [...filtered];
+  renderTablePage();
+}
+
+function renderTablePage() {
+  const maxCited = Math.max(...tableData.map(r => r.cited), 1);
+  const start = (currentPage - 1) * PAGE_SIZE;
+  const page = tableData.slice(start, start + PAGE_SIZE);
+
+  document.getElementById('tableBody').innerHTML = page.map(r => `
+    <tr>
+      <td><span class="year-pill">${r.year || '—'}</span></td>
+      <td style="max-width:340px">${r.doi ? `<a href="https://doi.org/${r.doi}" target="_blank" style="color:var(--ink);text-decoration:underline;text-underline-offset:3px">${r.title}</a>` : r.title}</td>
+      <td style="max-width:200px;color:var(--muted)">${r.authors ? r.authors.split(';').slice(0,3).join('; ') + (r.authors.split(';').length > 3 ? ' et al.' : '') : '—'}</td>
+      <td style="color:var(--accent2);max-width:160px">${r.source || '—'}</td>
+      <td>
+        <div class="cited-bar">
+          <span style="min-width:28px;text-align:right">${r.cited}</span>
+          <div class="bar-fill" style="width:${Math.round((r.cited/maxCited)*80)}px"></div>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+
+  renderPagination();
+}
+
+function renderPagination() {
+  const total = Math.ceil(tableData.length / PAGE_SIZE);
+  const p = document.getElementById('pagination');
+  if (total <= 1) { p.innerHTML = ''; return; }
+
+  let html = `<span class="page-info">Mostrando ${Math.min((currentPage-1)*PAGE_SIZE+1, tableData.length)}–${Math.min(currentPage*PAGE_SIZE, tableData.length)} de ${tableData.length}</span>`;
+
+  const pages = [];
+  for (let i = 1; i <= total; i++) {
+    if (i === 1 || i === total || (i >= currentPage - 2 && i <= currentPage + 2)) pages.push(i);
+    else if (pages[pages.length-1] !== '…') pages.push('…');
+  }
+
+  pages.forEach(pg => {
+    if (pg === '…') html += `<span class="page-btn" style="cursor:default">…</span>`;
+    else html += `<button class="page-btn ${pg === currentPage ? 'active' : ''}" onclick="goPage(${pg})">${pg}</button>`;
+  });
+
+  p.innerHTML = html;
+}
+
+function goPage(n) { currentPage = n; renderTablePage(); document.querySelector('.table-card').scrollIntoView({behavior:'smooth', block:'start'}); }
+
+// ─── EXPORTS ──────────────────────────────────────────────────
+function exportCSV() {
+  const header = 'Año,Título,Autores,Fuente,Citas,Tipo,Idioma,DOI\n';
+  const rows = allData.map(r =>
+    [r.year, `"${r.title.replace(/"/g,'""')}"`, `"${r.authors.replace(/"/g,'""')}"`, `"${r.source}"`, r.cited, r.type, r.lang, r.doi].join(',')
+  ).join('\n');
+  download('bibliometrix-export.csv', header + rows, 'text/csv');
+}
+
+function exportJSON() {
+  download('bibliometrix-data.json', JSON.stringify(allData, null, 2), 'application/json');
+}
+
+function download(name, content, mime) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content], { type: mime }));
+  a.download = name;
+  a.click();
+}
+
+// ─── RESET ────────────────────────────────────────────────────
+function resetApp() {
+  allData = []; filtered = []; tableData = [];
+  Object.values(charts).forEach(c => c.destroy());
+  charts = {};
+  document.getElementById('fileInput').value = '';
+  document.getElementById('results').style.display = 'none';
+  document.getElementById('uploadSection').style.display = 'block';
+}
+
+function destroyChart(id) {
+  if (charts[id]) { charts[id].destroy(); delete charts[id]; }
+}
+</script>
+</body>
+</html>
