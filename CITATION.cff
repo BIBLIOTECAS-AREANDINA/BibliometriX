@@ -1,0 +1,25 @@
+cff-version: 1.2.0
+message: "Si usas este software, por favor cítalo de la siguiente manera."
+title: "BibliometriX"
+abstract: >-
+  Herramienta web de código abierto para análisis bibliométrico de
+  exportaciones de Scopus y Web of Science, ejecutada íntegramente en el
+  navegador (sin backend). Calcula indicadores de productividad y citación
+  (índices h, g e i10, Ley de Lotka, Ley de Bradford), co-ocurrencia de
+  palabras clave, redes de coautoría y colaboración internacional por país.
+authors:
+  - family-names: "Labrada Jimenez"
+    given-names: "Alejandro"
+    alias: "REKOL08"
+version: 2.0.0
+date-released: 2026-07-22
+url: "https://rekol08.github.io/BibliometriX/"
+repository-code: "https://github.com/REKOL08/BibliometriX"
+license: MIT
+keywords:
+  - bibliometría
+  - bibliometrics
+  - scopus
+  - web-of-science
+  - análisis-de-citas
+  - scientometrics
