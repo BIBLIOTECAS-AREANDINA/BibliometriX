@@ -13,8 +13,8 @@ authors:
     alias: "REKOL08"
 version: 2.0.0
 date-released: 2026-07-22
-url: "https://rekol08.github.io/BibliometriX/"
-repository-code: "https://github.com/REKOL08/BibliometriX"
+url: "https://bibliotecas-areandina.github.io/BibliometriX/"
+repository-code: "https://github.com/BIBLIOTECAS-AREANDINA/BibliometriX"
 license: MIT
 keywords:
   - bibliometría

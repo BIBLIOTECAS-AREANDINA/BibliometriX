@@ -4,7 +4,7 @@
 
 BibliometriX es una herramienta web de un solo archivo (zero-dependency, salvo Chart.js vía CDN) que convierte tus exportaciones de Scopus o Web of Science en un dashboard completo de indicadores bibliométricos, directamente en el navegador.
 
-🔗 **Demo en vivo:** https://rekol08.github.io/BibliometriX/
+🔗 **Demo en vivo:** https://bibliotecas-areandina.github.io/BibliometriX/
 
 ---
 
@@ -72,3 +72,14 @@ Distribuido bajo licencia MIT. Consulta [`LICENSE`](./LICENSE) para más detalle
 ---
 
 Desarrollado por [REKOL08](https://github.com/REKOL08) · Pereira, Colombia
+
+
+## Centralización institucional — 13 de noviembre de 2026
+
+Repositorio transferido a [BIBLIOTECAS-AREANDINA](https://github.com/BIBLIOTECAS-AREANDINA), conservando su nombre y visibilidad pública. Las referencias Git anteriores se verificaron antes de actualizar esta documentación.
+
+HTML/JS; Scopus/WoS y Chart.js; workflow Jekyll existente. Validación de indicadores pendiente.
+
+Dirección institucional de Pages: https://bibliotecas-areandina.github.io/BibliometriX/ . La disponibilidad HTTP se registra en la bitácora de centralización; no equivale a una prueba funcional completa. Los enlaces antiguos de Pages y QR impresos requieren actualización.
+
+[Inventario y pendientes](https://github.com/BIBLIOTECAS-AREANDINA/BIBLIONOVA/blob/main/docs/CENTRALIZACION_2026-11-13.md). No se modificaron despliegues de Apps Script, n8n ni Koha de producción.
